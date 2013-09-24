@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, argparse, configparser
+import sys, os, argparse, configparser, shutil
 from github import Github
 from git import *
 
@@ -30,6 +30,7 @@ def parse_arguments(argv):
     parser.add_argument('target', help='Target Organization')
     parser.add_argument('--verbose', '-v', help='Increase Verbosity', action="store_true")
     parser.add_argument('--dir', '-d', help='Target directory where the local copies will be stored', default="/tmp/")
+    parser.add_argument('--prefix', help="Optional repo name prefix")
     return parser.parse_args()
 
   
@@ -56,9 +57,12 @@ def process_repo(path, name, src, target):
   # Check if local repo clone  exists, if not clone with --mirror
 
   #Push up clone to github url
-  print "Processing source {} to target {} in {}\n".format(src, target, path)
-  repo = Repo.clone_from(src, path + name)
-  exit
+  print "Processing source {} to target {} in {}".format(src, target, path)
+  clone_dir = os.path.join(path, name)
+  if os.path.exists(clone_dir) and os.path.isdir(clone_dir):
+    shutil.rmtree(clone_dir)
+  repo = Repo.clone_from(src, path + name, mirror=True)
+  repo.git.push(target, mirror=True)
 
 def process_repos(path, repo_list):
     for target, data in repo_list.items():
